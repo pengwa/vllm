@@ -28,7 +28,7 @@ if python3 -c "import quart" &> /dev/null; then
     echo "Quart is already installed."
 else
     echo "Quart is not installed. Installing..."
-    python3 -m pip install quart
+    python3 -m pip install --ignore-installed quart
 fi 
 
 # a function that waits vLLM server to start
@@ -44,18 +44,22 @@ wait_for_server() {
 # You can also adjust --kv-ip and --kv-port for distributed inference.
 
 # prefilling instance, which is the KV producer
-CUDA_VISIBLE_DEVICES=0 vllm serve meta-llama/Meta-Llama-3.1-8B-Instruct \
+CUDA_VISIBLE_DEVICES=0,1,2,3 vllm serve deepseek-ai/DeepSeek-R1 \
     --port 8100 \
-    --max-model-len 100 \
-    --gpu-memory-utilization 0.8 \
+    --tensor-parallel-size 4 \
+    --max-model-len 32768 \
+    --gpu-memory-utilization 0.98 \
+    --trust-remote-code \
     --kv-transfer-config \
     '{"kv_connector":"PyNcclConnector","kv_role":"kv_producer","kv_rank":0,"kv_parallel_size":2}' &
 
 # decoding instance, which is the KV consumer
-CUDA_VISIBLE_DEVICES=1 vllm serve meta-llama/Meta-Llama-3.1-8B-Instruct \
+CUDA_VISIBLE_DEVICES=4,5,6,7 vllm serve deepseek-ai/DeepSeek-R1 \
     --port 8200 \
-    --max-model-len 100 \
-    --gpu-memory-utilization 0.8 \
+    --tensor-parallel-size 4 \
+    --max-model-len 32768 \
+    --trust-remote-code \
+    --gpu-memory-utilization 0.98 \
     --kv-transfer-config \
     '{"kv_connector":"PyNcclConnector","kv_role":"kv_consumer","kv_rank":1,"kv_parallel_size":2}' &
 
@@ -78,7 +82,7 @@ sleep 1
 output1=$(curl -X POST -s http://localhost:8000/v1/completions \
 -H "Content-Type: application/json" \
 -d '{
-"model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+"model": "deepseek-ai/DeepSeek-R1",
 "prompt": "San Francisco is a",
 "max_tokens": 10,
 "temperature": 0
@@ -87,7 +91,7 @@ output1=$(curl -X POST -s http://localhost:8000/v1/completions \
 output2=$(curl -X POST -s http://localhost:8000/v1/completions \
 -H "Content-Type: application/json" \
 -d '{
-"model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+"model": "deepseek-ai/DeepSeek-R1",
 "prompt": "Santa Clara is a",
 "max_tokens": 10,
 "temperature": 0

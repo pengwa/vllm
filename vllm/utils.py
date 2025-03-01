@@ -2208,6 +2208,9 @@ def bind_kv_cache(
         assert len(forward_ctx.kv_cache) == len(kv_cache)
         for ve, ve_kv_cache in enumerate(kv_cache):
             forward_ctx.kv_cache[ve] = ve_kv_cache[kv_cache_idx]
+            
+    # pengwa: comes here.
+    # raise ValueError("come here heheheh???") , yes comes here.
 
 
 def run_method(obj: Any, method: Union[str, bytes, Callable], args: Tuple[Any],

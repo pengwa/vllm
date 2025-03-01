@@ -74,7 +74,7 @@ class MQLLMEngine:
         # the python object to be reused again.
         kwargs['use_cached_outputs'] = True
 
-        self.engine = LLMEngine(*args, **kwargs)
+        self.engine = LLMEngine(*args, **kwargs) # pengwa: comes here.
         self.log_requests = log_requests
 
         self.use_async_sockets = use_async_sockets
@@ -128,7 +128,7 @@ class MQLLMEngine:
                    executor_class=executor_class,
                    log_requests=not engine_args.disable_log_requests,
                    log_stats=not engine_args.disable_log_stats,
-                   usage_context=usage_context)
+                   usage_context=usage_context) # pengwa: comes here.
 
     def start(self):
         try:
@@ -399,7 +399,7 @@ def run_mp_engine(engine_args: AsyncEngineArgs, usage_context: UsageContext,
     try:
         engine = MQLLMEngine.from_engine_args(engine_args=engine_args,
                                               usage_context=usage_context,
-                                              ipc_path=ipc_path)
+                                              ipc_path=ipc_path) # pengwa: comes here.
 
         signal.signal(signal.SIGTERM, signal_handler)
 

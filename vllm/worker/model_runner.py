@@ -1702,6 +1702,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                                 device=previous_hidden_states.device)
                 ])
         else:
+            # pengwa: comes here
             model_executable = self.model
 
         # Receive KV cache in distributed KV cache transfer setting
@@ -1761,6 +1762,8 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                 # worker is working on, so that we can send KV for only those
                 # layers.
                 model_executable,
+                self.vllm_config.model_config,
+                self.vllm_config.cache_config,
                 model_input,
                 kv_caches,
                 hidden_or_intermediate_states,

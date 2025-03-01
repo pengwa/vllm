@@ -1401,6 +1401,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         forward_ctx = self.vllm_config.compilation_config.static_forward_context
         block_size = self.vllm_config.cache_config.block_size
         kv_cache_spec: KVCacheSpec = {}
+        # pengwa: not come here.
         for layer_name, attn_module in forward_ctx.items():
             # TODO: Support other attention modules, e.g., sliding window,
             # cross-attention, MLA.

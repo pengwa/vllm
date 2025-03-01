@@ -150,6 +150,8 @@ class SimpleConnector(KVConnectorBase):
     def send_kv_caches_and_hidden_states(
         self,
         model_executable: torch.nn.Module,
+        model_conf,
+        cache_config,
         model_input: "ModelInputForGPUWithSamplingMetadata",
         kv_caches: List[torch.Tensor],
         hidden_or_intermediate_states: Union[torch.Tensor,
@@ -162,11 +164,18 @@ class SimpleConnector(KVConnectorBase):
         start_layer = model_executable.model.start_layer
         end_layer = model_executable.model.end_layer
 
+        # pengwa: model_executable is DeepseekV2ForCausalLM
         model_config = model_executable.model.config
+        # pengwa: num_key_value_heads = 128, https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/config.json
+        # tp_size: 4
         num_heads = int(model_config.num_key_value_heads / self.tp_size)
         hidden_size = model_config.hidden_size
         num_attention_heads = model_config.num_attention_heads
-        head_size = int(hidden_size / num_attention_heads)
+        # pengwa: hidden_size = 7168, num_attention_heads = 128
+        # so head_size = 56
+        # head_size = int(hidden_size / num_attention_heads)
+        head_size = model_conf.get_head_size()
+        block_size = cache_config.block_size
 
         # query_lens contains new KV caches that are added to vLLM.
         # so we will send them to decode instance
@@ -181,8 +190,10 @@ class SimpleConnector(KVConnectorBase):
             for layer_id in range(start_layer, end_layer):
                 kv_cache = kv_caches[layer_id - start_layer]
 
-                key_cache = kv_cache[0].reshape(-1, num_heads, head_size)
-                value_cache = kv_cache[1].reshape(-1, num_heads, head_size)
+                # pengwa: kv_cache[0] - 9216, num_heads - 32, head_size - 56
+                # untimeError: shape '[-1, 32, 56]' is invalid for input of size 9216
+                key_cache = kv_cache[0].reshape(-1, block_size, head_size)
+                value_cache = kv_cache[1].reshape(-1, block_size, head_size)
 
                 current_slot_mapping = slot_mapping_flat[start_pos:end_pos]
 

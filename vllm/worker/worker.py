@@ -304,7 +304,7 @@ class Worker(LocalOrDistributedWorkerBase):
             from contextlib import nullcontext
             context = nullcontext()
         with context:
-            self._init_cache_engine()
+            self._init_cache_engine() # pengwa: comes here.
         self._warm_up_model()
 
     def _init_cache_engine(self):
@@ -319,7 +319,7 @@ class Worker(LocalOrDistributedWorkerBase):
             for ve in range(self.parallel_config.pipeline_parallel_size)
         ]
         bind_kv_cache(self.compilation_config.static_forward_context,
-                      self.gpu_cache)
+                      self.gpu_cache) # pengwa: comes here.
 
     def _warm_up_model(self) -> None:
         # warm up sizes that are not in cudagraph capture sizes,

@@ -426,7 +426,36 @@ class DeepseekV2MLAAttention(nn.Module):
         #     k_c.size(1) + k_pe.size(1) == kv_cache.size(2)
         # i.e.
         #     kv_lora_rank + qk_rope_head_dim == head_size
-        self.mla_attn = Attention(
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242] Exception in worker VllmWorkerProcess while processing method start_worker_execution_loop.
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242] Traceback (most recent call last):
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/executor/multiproc_worker_utils.py", line 236, in _run_worker_process
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     output = run_method(worker, method, args, kwargs)
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/utils.py", line 2235, in run_method
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     return func(*args, **kwargs)
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]            ^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/worker/worker_base.py", line 91, in start_worker_execution_loop
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     output = self.execute_model(execute_model_req=None)
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/worker/worker_base.py", line 421, in execute_model
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     output = self.model_runner.execute_model(
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     return func(*args, **kwargs)
+        # CRITICAL 03-01 11:43:48 [launcher.py:116] MQLLMEngine is already dead, terminating server process
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]            ^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/worker/model_runner.py", line 1717, in execute_model
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     get_kv_transfer_group().recv_kv_caches_and_hidden_states(
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/distributed/kv_transfer/kv_transfer_agent.py", line 78, in recv_kv_caches_and_hidden_states
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     return self.connector.recv_kv_caches_and_hidden_states(
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/pengwa/vllm/vllm/distributed/kv_transfer/kv_connector/simple_connector.py", line 290, in recv_kv_caches_and_hidden_states
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     layer.self_attn.attn.kv_cache_dtype,
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     ^^^^^^^^^^^^^^^^^^^^
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1938, in __getattr__
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242]     raise AttributeError(
+        # (VllmWorkerProcess pid=158644) ERROR 03-01 11:43:48 [multiproc_worker_utils.py:242] AttributeError: 'DeepseekV2MLAAttention' object has no attribute 'attn'
+        self.attn = self.mla_attn = Attention(
             num_heads=self.num_local_heads,
             head_size=self.kv_lora_rank + self.qk_rope_head_dim,
             scale=self.scaling,
@@ -490,8 +519,10 @@ class DeepseekV2DecoderLayer(nn.Module):
         # with the layer's index.
         layer_idx = int(prefix.split(sep='.')[-1])
         if model_config.use_mla:
+            # pengwa: comes here.
             attn_cls = DeepseekV2MLAAttention
         else:
+            raise ValueError("33333333333333333333333333")
             attn_cls = DeepseekV2Attention
         self.self_attn = attn_cls(
             config=config,
@@ -564,8 +595,9 @@ class DeepseekV2Model(nn.Module):
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
-
+        
         config = vllm_config.model_config.hf_config
+        self.config = config # https://github.com/pengwa/vllm/blob/e489ad7a210f4234db696d1f2749d5f3662fa65b/vllm/distributed/kv_transfer/kv_connector/simple_connector.py#L165 need.
         model_config = vllm_config.model_config
         cache_config = vllm_config.cache_config
         quant_config = vllm_config.quant_config
