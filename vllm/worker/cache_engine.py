@@ -78,6 +78,9 @@ class CacheEngine:
         """Allocates KV cache on the specified device."""
         kv_cache_shape = self.attn_backend.get_kv_cache_shape(
             num_blocks, self.block_size, self.num_kv_heads, self.head_size)
+        # num_blocks: 8526, block_size: 16, num_kv_heads: 1, head_size: 576, kv_cache_shape: (8526, 16, 576)
+        # num_blocks: 3819, block_size: 16, num_kv_heads: 1, head_size: 576, kv_cache_shape: (3819, 16, 576)
+        print(f"num_blocks: {num_blocks}, block_size: {self.block_size}, num_kv_heads: {self.num_kv_heads}, head_size: {self.head_size}, kv_cache_shape: {kv_cache_shape}")
         pin_memory = is_pin_memory_available() if device == "cpu" else False
         kv_cache: List[torch.Tensor] = []
 

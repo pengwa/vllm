@@ -120,7 +120,7 @@ class ExecutorBase(ABC):
         self.cache_config.num_cpu_blocks = num_cpu_blocks
 
         self.collective_rpc("initialize_cache",
-                            args=(num_gpu_blocks, num_cpu_blocks))
+                            args=(num_gpu_blocks, num_cpu_blocks)) # pengwa: comes here.
 
     def apply_model(self, func: Callable[[nn.Module], _R]) -> list[_R]:
         """
